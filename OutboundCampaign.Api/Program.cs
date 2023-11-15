@@ -22,6 +22,14 @@ app.MapPost("/start-call", async ([FromBody] StartCallRequest request, IAmazonCo
     }
 });
 
+app.MapGet("/contacts/{instanceId}/{contactId}", async (string instanceId, string contactId, IAmazonConnect connectClient) =>
+{
+
+    var contactDetails = await GetContactDetails(instanceId, contactId, connectClient);
+    return Results.Ok(contactDetails);
+});
+
+
 app.Run();
 
 async Task<StartOutboundVoiceContactResponse> StartOutboundVoiceContactAsync(StartCallRequest request, IAmazonConnect connectClient)
@@ -44,3 +52,15 @@ async Task<StartOutboundVoiceContactResponse> StartOutboundVoiceContactAsync(Sta
     
     return await connectClient.StartOutboundVoiceContactAsync(startOutboundVoiceContactRequest);
 }
+
+async Task<DescribeContactResponse> GetContactDetails(string instanceId, string contactId, IAmazonConnect connectClient)
+{
+    var describeContactRequest = new DescribeContactRequest
+    {
+        InstanceId = instanceId,
+        ContactId = contactId
+    };
+
+    return await connectClient.DescribeContactAsync(describeContactRequest);
+}
+
