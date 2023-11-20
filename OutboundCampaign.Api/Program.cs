@@ -1,10 +1,13 @@
 using Amazon.Connect;
 using Amazon.Connect.Model;
+using Amazon.ConnectCampaignService;
+using Amazon.ConnectCampaignService.Model;
 using Microsoft.AspNetCore.Mvc;
+using AnswerMachineDetectionConfig = Amazon.Connect.Model.AnswerMachineDetectionConfig;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAWSService<IAmazonConnect>();
-
+builder.Services.AddAWSService<IAmazonConnectCampaignService>();
 var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
@@ -24,11 +27,29 @@ app.MapPost("/start-call", async ([FromBody] StartCallRequest request, IAmazonCo
 
 app.MapGet("/contacts/{instanceId}/{contactId}", async (string instanceId, string contactId, IAmazonConnect connectClient) =>
 {
+    var describeContactRequest = new DescribeContactRequest
+    {
+        InstanceId = instanceId,
+        ContactId = contactId
+    };
 
-    var contactDetails = await GetContactDetails(instanceId, contactId, connectClient);
+    var contactDetails = await connectClient.DescribeContactAsync(describeContactRequest);
     return Results.Ok(contactDetails);
 });
 
+app.MapGet("/campaign", async (IAmazonConnectCampaignService connectCampaign) =>
+{
+    var listCampaignsRequest = new ListCampaignsRequest();
+    return await connectCampaign.ListCampaignsAsync(listCampaignsRequest);
+});
+
+app.MapGet("/campaign/{campaignId}/", async (string campaignId, IAmazonConnectCampaignService connectCampaign) =>
+{
+
+    var request = new GetCampaignStateRequest { Id = campaignId };
+    var response = await connectCampaign.GetCampaignStateAsync(request);
+    return Results.Ok(response.State);
+});
 
 app.Run();
 
@@ -51,16 +72,5 @@ async Task<StartOutboundVoiceContactResponse> StartOutboundVoiceContactAsync(Sta
     };
     
     return await connectClient.StartOutboundVoiceContactAsync(startOutboundVoiceContactRequest);
-}
-
-async Task<DescribeContactResponse> GetContactDetails(string instanceId, string contactId, IAmazonConnect connectClient)
-{
-    var describeContactRequest = new DescribeContactRequest
-    {
-        InstanceId = instanceId,
-        ContactId = contactId
-    };
-
-    return await connectClient.DescribeContactAsync(describeContactRequest);
 }
 
