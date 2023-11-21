@@ -37,6 +37,54 @@ app.MapGet("/contacts/{instanceId}/{contactId}", async (string instanceId, strin
     return Results.Ok(contactDetails);
 });
 
+app.MapGet("/metrics/{instanceId}/", async (string instanceId, IAmazonConnect connectClient) =>
+{
+    var resourceArn = $"arn:aws:connect:us-east-1:274182154370:instance/{instanceId}";
+    var getMetricDataRequest = new GetMetricDataV2Request
+    {
+        ResourceArn = resourceArn,
+        StartTime = DateTime.UtcNow.AddDays(-30),
+        EndTime =  DateTime.Today,
+        Interval = new IntervalDetails
+        {
+            IntervalPeriod = "TOTAL" ,
+            TimeZone = "UTC"
+        },
+        //Groupings = new List<string>(){""},
+        Filters = new List<FilterV2>()
+        {
+            new FilterV2()
+            {
+                FilterKey = "CHANNEL",
+                FilterValues = new List<string>(){"VOICE"}
+            },
+            new FilterV2
+            {
+                FilterKey = "QUEUE",
+                FilterValues = new List<string>{ "b463cbd6-f128-4769-9b40-25b97abf466f" }
+            }
+        },
+        Metrics = new List<MetricV2>
+        {
+            new()
+            {
+                Name = "CONTACTS_HANDLED",
+                MetricFilters = new List<MetricFilterV2>
+                {
+                    new MetricFilterV2
+                    {
+                        MetricFilterKey = "INITIATION_METHOD",
+                        MetricFilterValues = new List<string> { "OUTBOUND" },
+                    },
+                },
+            }
+        }
+    };
+
+    var metrics = await connectClient.GetMetricDataV2Async(getMetricDataRequest);
+    return Results.Ok(metrics);
+});
+
 app.MapGet("/campaign", async (IAmazonConnectCampaignService connectCampaign) =>
 {
     var listCampaignsRequest = new ListCampaignsRequest();
