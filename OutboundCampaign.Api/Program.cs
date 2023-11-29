@@ -37,6 +37,19 @@ app.MapGet("/contacts/{instanceId}/{contactId}", async (string instanceId, strin
     return Results.Ok(contactDetails);
 });
 
+app.MapGet("/contacts/attributes/{instanceId}/{contactId}",
+    async (string instanceId, string contactId, IAmazonConnect connectClient) =>
+    {
+        var getContactAttributesRequest = new GetContactAttributesRequest
+        {
+            InstanceId = instanceId,
+            InitialContactId = contactId
+        };
+
+        var contactAttributes = await connectClient.GetContactAttributesAsync(getContactAttributesRequest);
+        return Results.Ok(contactAttributes);
+    });
+
 app.MapGet("/metrics/{instanceId}/", async (string instanceId, IAmazonConnect connectClient) =>
 {
     var resourceArn = $"arn:aws:connect:us-east-1:274182154370:instance/{instanceId}";
