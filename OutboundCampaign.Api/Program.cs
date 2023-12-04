@@ -129,7 +129,11 @@ async Task<StartOutboundVoiceContactResponse> StartOutboundVoiceContactAsync(Sta
             AwaitAnswerMachinePrompt = true
         },
         CampaignId = request.CampaignId,
-        TrafficType = TrafficType.CAMPAIGN
+        TrafficType = TrafficType.CAMPAIGN,
+        Attributes = new Dictionary<string, string>()
+        {
+            {"CostumerPhoneNumber", request.DestinationPhoneNumber}
+        }
     };
     
     return await connectClient.StartOutboundVoiceContactAsync(startOutboundVoiceContactRequest);
